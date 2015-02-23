@@ -1,4 +1,4 @@
-<pre><div class="text_to_html">       .data
+	.data
 mes01: .asciiz "El resultado de la suma es "
 salto: .asciiz "\n"
 datos: .word 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
@@ -32,4 +32,3 @@ fin:	li 	$v0, 4	 	   # Imprime mensaje de resultado
 	la	$a0, salto
 	syscall
 	b ini			   # Itera indefinidamente
-</div></pre>

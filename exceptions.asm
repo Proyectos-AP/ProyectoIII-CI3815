@@ -1,4 +1,4 @@
-<pre><div class="text_to_html"># SPIM S20 MIPS simulator.
+# SPIM S20 MIPS simulator.
 # The default exception handler for spim.
 #
 # Copyright (C) 1990-2004 James Larus, larus@cs.wisc.edu.
@@ -161,9 +161,3 @@ ret:
 # Return from exception on MIPS32:
 	eret
 
-
-
-
-
-
-</div></pre>
