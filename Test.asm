@@ -5,7 +5,17 @@ datos: .word 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
 n:     .word 20
 mes02: .asciiz "Comenzo a ejecutar el programa de prueba\n"
        .text
-main:	li  	$v0, 4
+       
+main:	
+	li      $t0, 0xffff0000     # Receiver control register (Teclado)
+	li      $t1, 0x00000002     # Interrupt enable bit
+	sw      $t1, ($t0)
+
+	li      $t0, 0xffff0008     # Receiver control register (Monitor)
+	li      $t1, 0x00000002     # Interrupt enable bit
+	sw      $t1, ($t0)
+
+	li  	$v0, 4
 	la	$a0, mes02
 	syscall
 ini:	lw	$t0, n		   # Numero de elementos en el arreglo
