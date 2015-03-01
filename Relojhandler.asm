@@ -52,14 +52,8 @@ m_fin:		.asciiz		"Finalizara la ejecucion del programa. \n"
 	# Direccion donde se almacenan los manejadores de instrucciones:
 
 	.ktext 0x80000180
-	
-	# Planificador de registros:
-	
 
-	# Respaldamos $at:
-	move $k0,$at
-
-	# Primero se deben guardar todos los registros antes de manejar la interrupcion:
+	# Primero se deben guardar todos los registros antes de manejar la interrupcion / excepcion:
 
 	sw $a0, registros
 	sw $t0, registros+4
@@ -67,7 +61,47 @@ m_fin:		.asciiz		"Finalizara la ejecucion del programa. \n"
 	sw $t2, registros+12
 	sw $t3, registros+16
 	sw $v0, registros+20
-	sw $v1, registros+24
+	sw $v1, registros+24	
+	
+	beq $v0,100,llamada100
+	b interrupcion
+	
+llamada100:
+
+
+
+	# Respaldamos EPC:
+	mfc0 $t2,$14
+
+	# Se habilitan las interrupciones:
+	mfc0 $k1,$12
+	ori $k1,$k1,0x0301
+	mtc0 $k1,$12
+
+	# Se limpia el registro 13:
+
+	mfc0 $k0,$13
+	andi $k0,$k0,0x007C
+	mtc0,$k0,$13
+	
+	li      $t0, 0xffff0000     # Receiver control register (Teclado)
+	li      $t1, 0x00000002     # Interrupt enable bit
+	sw      $t1, ($t0)
+
+	li      $t0, 0xffff0008     # Receiver control register (Monitor)
+	li      $t1, 0x00000002     # Interrupt enable bit
+	sw      $t1, ($t0)
+
+	# Se actualiza el valor de retorno:
+	addi $t2,$t2,4
+	mtc0 $t2,$14
+
+	b volver
+	
+interrupcion:
+
+	# Respaldamos $at:
+	move $k0,$at
 
 	# Because we are running in the kernel, we can use $k0/$k1 without
 	# saving their old values.

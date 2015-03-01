@@ -7,13 +7,9 @@ mes02: .asciiz "Comenzo a ejecutar el programa de prueba\n"
        .text
        
 main:	
-	li      $t0, 0xffff0000     # Receiver control register (Teclado)
-	li      $t1, 0x00000002     # Interrupt enable bit
-	sw      $t1, ($t0)
 
-	li      $t0, 0xffff0008     # Receiver control register (Monitor)
-	li      $t1, 0x00000002     # Interrupt enable bit
-	sw      $t1, ($t0)
+	li $v0,100
+	syscall
 
 	li  	$v0, 4
 	la	$a0, mes02
@@ -27,7 +23,7 @@ lazo:	lw 	$t2, 0($t1)	   # Carga el i-esimo elemento
 	addi 	$t0, $t0, -1
 	addi 	$t1, $t1, 4
 	move  $t3, $v1		   # Numero de veces que se va a ejecutar
-	mul   $t3, $t3, 1000	   # el lazo de retardo antes de sumar el
+	mul   $t3, $t3, 100	   # el lazo de retardo antes de sumar el
 retardo:			   # siguiente elemento del arreglo
 	addi	$t3, $t3, -1
 	bgtz	$t3, retardo
