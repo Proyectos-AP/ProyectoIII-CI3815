@@ -7,7 +7,7 @@
 #	Alejandra Cordero / Carnet: 12-10645
 #	Pablo Maldonado   / Carnet: 12-10561
 #
-# Ultima modificacion: 22/02/2015
+# Ultima modificacion: 05/03/2015
 #
 
 ##############################################################
@@ -113,8 +113,8 @@ m_agregarUnidad:
 	# Se obtiene el tiempo actual:
 	lb $t1,reloj+2
 
-	# Se verifica si la hora es de la forma X3:XX
-	beq $t1,3,verificar_reset
+	# Se verifica si la hora es de la forma X9:XX
+	#beq $t1,9,verificar_reset
 
 	# Se verifica si es necesario aumentar una decima a 
 	# los segundos:
@@ -134,7 +134,7 @@ m_agregarDecimas:
 	sb $zero,reloj+2	
 	lb $t2,reloj+3
 
-	beq $t2,2,verificar_reset
+	beq $t2,5,letra_r
 
 	addi $t2,$t2,1
 	sb $t2,reloj+3
@@ -187,6 +187,8 @@ imprime_tiempo:
 	imprimir_t(salto_linea)
 
 imprime_monitor:
+
+	
 
 	lb $t0,m_tiempo
 	li $t2,0
