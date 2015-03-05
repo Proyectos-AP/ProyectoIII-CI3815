@@ -19,7 +19,7 @@
 .globl reloj
 reloj:		.word		0	
 registros:	.word		0,1,2,3,4,5,6
-m_tiempo:		.asciiz		"Time: "
+m_tiempo:		.asciiz		"Time:   :   \n"
 dos_puntos:	.asciiz		":"
 salto_linea:	.asciiz		"\n"
 m_fin:		.asciiz		"Finalizara la ejecucion del programa. \n"
@@ -55,7 +55,6 @@ m_fin:		.asciiz		"Finalizara la ejecucion del programa. \n"
 	
 	# Planificador de registros:
 	
-
 	# Respaldamos $at:
 	move $k0,$at
 
@@ -69,11 +68,65 @@ m_fin:		.asciiz		"Finalizara la ejecucion del programa. \n"
 	sw $v0, registros+20
 	sw $v1, registros+24
 
-	# Because we are running in the kernel, we can use $k0/$k1 without
-	# saving their old values.
+	# Se verifica si la interrupcion fue un syscall:
 
-	# Se realiza el manejo de la interrupcion:
+	mfc0 $k0 $13		# Cause register
+	srl $a0 $k0 2		# Extract ExcCode Field
+	andi $a0 $a0 0x1f
 	
+	beq $a0,8,verificar_scall
+	beq $a0,0,interrup_reloj
+
+
+verificar_scall:
+	
+	beq $v0,100,scall_100
+	bne $v0,100,noScall_100
+	
+noScall_100:
+	
+	# Se actualiza el EPC antes de volver: 
+	mfc0,$t0,$14
+	addi $t0,$t0,4
+	mtc0 $t0,$14
+	b volver
+
+scall_100:
+
+	# Se habilitan las interrupciones por software
+
+	mfc0 $k0 $12			# Set Status register
+	ori  $k0 0x0301		# Interrupts enabled
+	mtc0 $k0 $12
+
+	li      $t0, 0xffff0000     # Receiver control register (Teclado)
+	li      $t1, 0x00000002     # Interrupt enable bit
+	sw      $t1, ($t0)
+
+	li      $t0, 0xffff0008     # Receiver control register (Monitor)
+	li      $t1, 0x00000002     # Interrupt enable bit
+	sw      $t1, ($t0)
+
+	# Se resetea el reloj:
+
+	sb $zero,reloj+3
+	sb $zero,reloj+2
+	sb $zero,reloj+1
+	sb $zero,reloj
+
+	# Se limpia el registro $13 del Coprocesador 0:	
+	mtc0 $zero,$13 
+
+	# Se actualiza el EPC antes de volver: 
+	mfc0,$t0,$14
+	addi $t0,$t0,4
+	mtc0 $t0,$14
+
+	b volver
+
+
+interrup_reloj:
+
 	# Se revisa la tecla que se marco	
 	lb  $t0, 0xffff0004	
 	beq $t0,116,letra_t
@@ -161,35 +214,47 @@ verificar_reset:
 imprime_tiempo:
 
 	# Se imprime el tiempo actual: (por consola)
-	imprimir_t(m_tiempo)
+	
 
-	li $v0,1
-	lb $a0,reloj+3 
-	syscall
+	#li $v0,1
+	#lb $a0,reloj+3 
+	#syscall
 
-	li $v0,1
-	lb $a0,reloj+2
-	syscall
+	#li $v0,1
+	#lb $a0,reloj+2
+	#syscall
 
-	imprimir_t(dos_puntos)
+	#imprimir_t(dos_puntos)
 		
-	li $v0,1
-	lb $a0,reloj+1
-	syscall
+	#li $v0,1
+	#lb $a0,reloj+1
+	#syscall
 
 	#imprimir_i(reloj+1)
 	#imprimir_i(reloj)	
 
-	li $v0,1
-	lb $a0,reloj
-	syscall
+	#li $v0,1
+	#lb $a0,reloj
+	#syscall
 
-	imprimir_t(salto_linea)
+	#imprimir_t(salto_linea)
 
 imprime_monitor:
 
-	
+	lb $t0,reloj+3
+	addi $t0,$t0,48
+	lb $t1,reloj+2
+	addi $t1,$t1,48
+	lb $t2,reloj+1
+	addi $t2,$t2,48
+	lb $t3,reloj
+	addi $t3,$t3,48
 
+	sb $t0,m_tiempo+6
+	sb $t1,m_tiempo+7
+	sb $t2,m_tiempo+9
+	sb $t3,m_tiempo+10
+	
 	lb $t0,m_tiempo
 	li $t2,0
 
@@ -202,64 +267,66 @@ loopMonitorTime:
 	lb  $t0,m_tiempo($t2)
 	bnez $t0 loopMonitorTime
 
-loopMonitorMinuto2:
+	imprimir_t(m_tiempo)
+
+#loopMonitorMinuto2:
 
 	# Se imprime el minuto actual (Monitor)
-	lb $t0,reloj+3
-	addi $t0,$t0,48
-	lw $t1, 0xFFFF0008
-	andi $t1,$t1,1
-	beqz $t1,loopMonitorMinuto2
-	sw $t0,0xFFFF000C
+#	lb $t0,reloj+3
+#	addi $t0,$t0,48
+#	lw $t1, 0xFFFF0008
+#	andi $t1,$t1,1
+#	beqz $t1,loopMonitorMinuto2
+#	sw $t0,0xFFFF000C
 
-loopMonitorMinuto1:
+#loopMonitorMinuto1:
 
 	# Se imprime el minuto actual (Monitor)
-	lb $t0,reloj+2
-	addi $t0,$t0,48
-	lw $t1, 0xFFFF0008
-	andi $t1,$t1,1
-	beqz $t1,loopMonitorMinuto1
-	sw $t0,0xFFFF000C
+#	lb $t0,reloj+2
+#	addi $t0,$t0,48
+#	lw $t1, 0xFFFF0008
+#	andi $t1,$t1,1
+#	beqz $t1,loopMonitorMinuto1
+#	sw $t0,0xFFFF000C
 
-loopDosPuntos:
+#loopDosPuntos:
 
 	# Se imprimen dos puntos ":" (Monitor)
-	li $t0,58
-	lw $t1, 0xFFFF0008
-	andi $t1,$t1,1
-	beqz $t1,loopDosPuntos
-	sw $t0,0xFFFF000C
+#	li $t0,58
+#	lw $t1, 0xFFFF0008
+#	andi $t1,$t1,1
+#	beqz $t1,loopDosPuntos
+#	sw $t0,0xFFFF000C
 
-loopMonitorSegundo2:
-
-	# Se imprime el minuto actual (Monitor)
-	lb $t0,reloj+1
-	addi $t0,$t0,48
-	lw $t1, 0xFFFF0008
-	andi $t1,$t1,1
-	beqz $t1,loopMonitorSegundo2
-	sw $t0,0xFFFF000C
-
-
-loopMonitorSegundo1:
+#loopMonitorSegundo2:
 
 	# Se imprime el minuto actual (Monitor)
-	lb $t0,reloj
-	addi $t0,$t0,48
-	lw $t1, 0xFFFF0008
-	andi $t1,$t1,1
-	beqz $t1,loopMonitorSegundo1
-	sw $t0,0xFFFF000C
+#	lb $t0,reloj+1
+#	addi $t0,$t0,48
+#	lw $t1, 0xFFFF0008
+#	andi $t1,$t1,1
+#	beqz $t1,loopMonitorSegundo2
+#	sw $t0,0xFFFF000C
 
-loopSaltoLinea:
+
+#loopMonitorSegundo1:
+
+	# Se imprime el minuto actual (Monitor)
+#	lb $t0,reloj
+#	addi $t0,$t0,48
+#	lw $t1, 0xFFFF0008
+#	andi $t1,$t1,1
+#	beqz $t1,loopMonitorSegundo1
+#	sw $t0,0xFFFF000C
+
+#loopSaltoLinea:
 
 	# Se imprimen dos puntos ":" (Monitor)
-	li $t0,10
-	lw $t1, 0xFFFF0008
-	andi $t1,$t1,1
-	beqz $t1,loopSaltoLinea
-	sw $t0,0xFFFF000C
+#	li $t0,10
+#	lw $t1, 0xFFFF0008
+#	andi $t1,$t1,1
+#	beqz $t1,loopSaltoLinea
+#	sw $t0,0xFFFF000C
 
  	b volver
 
@@ -276,28 +343,28 @@ letra_r:
 	# Se imprime el tiempo actual: (por consola)
 	imprimir_t(m_tiempo)
 
-	li $v0,1
-	lb $a0,reloj+3
-	syscall
+	#li $v0,1
+	#lb $a0,reloj+3
+	#syscall
 
-	li $v0,1
-	lb $a0,reloj+2
-	syscall
+	#li $v0,1
+	#lb $a0,reloj+2
+	#syscall
 
-	imprimir_t(dos_puntos)
+	#imprimir_t(dos_puntos)
 		
-	li $v0,1
-	lb $a0,reloj+1
-	syscall
+	#li $v0,1
+	#lb $a0,reloj+1
+	#syscall
 
 	#imprimir_i(reloj+1)
 	#imprimir_i(reloj)	
 	
-	li $v0,1
-	lb $a0,reloj
-	syscall
+	#li $v0,1
+	#lb $a0,reloj
+	#syscall
 
-	imprimir_t(salto_linea)
+	#imprimir_t(salto_linea)
 
 
 
